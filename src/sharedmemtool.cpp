@@ -94,8 +94,10 @@ bool sharedMemoryTool::loadNewFrame()
         {
             m_frame->m_timeStamp = timeStamp;
             memcpy((m_frame->m_frame), (m_smBuffer+m_memoryData.m_data[m_frameNameInSharedMemory].m_offset), m_memoryData.m_data[m_frameNameInSharedMemory].m_length);
+            memcpy((m_frame->m_depthFrame), (m_smBuffer+m_memoryData.m_data[m_depthFrameNameInSharedMemory].m_offset), m_memoryData.m_data[m_depthFrameNameInSharedMemory].m_length);
             memcpy((&m_frame->m_fps), (m_smBuffer+m_memoryData.m_data["FPS"].m_offset), m_memoryData.m_data["FPS"].m_length);
             m_cvMatFrame = cv::Mat(m_frame->m_height, m_frame->m_width, m_cvType, m_frame->m_frame);
+            m_cvMatDepthFrame = cv::Mat(m_frame->m_height, m_frame->m_width, m_cvDepthType, m_frame->m_depthFrame);
             loadAddedDataFromSharedMemory();
         }
         return true;
@@ -113,13 +115,13 @@ void RGBSharedMemoryTool::loadAddedDataFromSharedMemory()
     std::static_pointer_cast<RGBsharedMemoryFrame>(m_frame)->m_extrinsics.deserialize(m_smBuffer+m_memoryData.m_data["CAMERA_EXTRINSICS"].m_offset);
 }
 
-void sharedMemoryTool::getFrameAsCvMat(cv::Mat &frame)
+void sharedMemoryTool::getFrameAsCvMat(cv::Mat &frame, bool rgb)
 {
     auto now = utilities::timeUtility::getCurrentMicro();
 
     if(m_cvMatFrame.empty() || lastTimeStampRead == this->getTimestamp())
     {
-        if (now - lastPrintNoFrameTime >= utilities::timeUtility::MICRO_T0_SECOND * 5 and m_cvMatFrame.empty())
+        if (now - lastPrintNoFrameTime >= utilities::timeUtility::MICRO_T0_SECOND * 5 and m_cvMatFrame.empty() and m_cvMatDepthFrame.empty())
             // after first alert, keep sending each 5 seconds
             {
             lastPrintNoFrameTime = now;
@@ -128,10 +130,15 @@ void sharedMemoryTool::getFrameAsCvMat(cv::Mat &frame)
             }
     } else{
         lastTimeStampRead = this->getTimestamp();
+
+        if (rgb) {
         m_cvMatFrame.copyTo(frame);
+        }
+        else {
+        m_cvMatDepthFrame.copyTo(frame);
+        }
     }
 }
-
 
 RGBSharedMemoryTool::RGBSharedMemoryTool()
 : sharedMemoryTool()
@@ -139,7 +146,9 @@ RGBSharedMemoryTool::RGBSharedMemoryTool()
     m_channels = 3;
     m_deviceName = "FRONT_CAMERA";
     m_frameNameInSharedMemory = "RGB";
+    m_depthFrameNameInSharedMemory = "DEPTH";
     m_cvType = CV_8UC3;
+    m_cvDepthType = CV_16UC1;
     if(initSM())
     {
         utilities::loggerUtility::writeLog(TVL_LOG_INFO, "RGBSharedMemoryTool::RGBSharedMemoryTool(), INIT SUCCESSFULLY");
@@ -156,7 +165,9 @@ CameraReader::CameraReader()
         if(D435_cam->loadNewFrame())
         {
             D435_cam->getFrameAsCvMat(frame);
-            params.init(D435_cam->getCameraIntrinsics());
+          //  D435_cam->getFrameAsCvMat(this-, false);
+
+            //params.init(D435_cam->getCameraIntrinsics());
         }
 }
 
@@ -165,9 +176,10 @@ void CameraReader::readFrame()
         if(D435_cam->loadNewFrame())
         {
             D435_cam->getFrameAsCvMat(frame);
+            D435_cam->getFrameAsCvMat(Depthframe, false);
             try
             {
-                cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+               // cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
             }
             catch (std::exception& ex)
             {
@@ -188,12 +200,12 @@ unsigned int CameraReader::getHeight()
 
 cv::Mat CameraReader::getCameraMatrix()
 {
-    return params.CameraMatrix;
+    return cv::Mat{};
 }
 
 cv::Mat CameraReader::getDistortion()
 {
-    return params.Distorsion;
+    return cv::Mat{};
 }
 
 long CameraReader::getTimestamp()
