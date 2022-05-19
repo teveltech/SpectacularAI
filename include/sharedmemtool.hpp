@@ -22,6 +22,7 @@ namespace fs = boost::filesystem;
 //#include "cam_params.h"
 #include "sharedMemoryContainer.hpp"
 
+//#include <spectacularAI/vio.hpp>
 
 class sharedMemoryFrame
         {

@@ -17,23 +17,24 @@ include_directories(
         # include
         ${catkin_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+        ${EIGEN3_INCLUDE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/Spec_API/Linux_Ubuntu_x86-64/include)
+
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${EIGEN3_INCLUDE_DIR})
-
-add_executable(${PROJECT_NAME}
-        src/main.cpp
+add_library(${PROJECT_NAME}
         src/sharedmemtool.cpp
         )
+
+# link_directories(${CMAKE_SOURCE_DIR}/Spec_API/Linux_Ubuntu_x86-64/lib/cmake/)
 
 target_link_libraries(${PROJECT_NAME}
         ${CONAN_LIBS}
         # opencv_calib3d
         opencv_highgui
         ${THREADLIB} ${catkin_LIBRARIES}
+  #      spectacularAI
         )
 
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
