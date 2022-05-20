@@ -15,6 +15,7 @@
 #include <opencv2/videoio.hpp>
 #include "utilities.hpp"
 
+#include <opencv2/opencv.hpp>
 #include "CameraParameters.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
