@@ -137,5 +137,23 @@ class CameraReader
             cv::Mat getCameraMatrix();
             cv::Mat getDistortion();
             long getTimestamp();
+            void imshow();
         };
+class Buscemi {
+        public:
+        Buscemi() {
+        reader = new CameraReader();
+        }
+        ~Buscemi() {
+        if (reader != nullptr) {
+                delete reader;
+        }
+        }
+        void activate() {
+                imshow("rgb", reader->frame); // Show our image inside the created window.
+                imshow("depth", reader->D435_cam->m_cvMatDepthFrame); // Show our image inside the created window.
+        }
+        private:
+        CameraReader* reader;
+};
 #endif //__ARUCO_READER_SHARED_MEMORY_TOOL_HPP__
